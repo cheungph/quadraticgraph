@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quadratic Function Graph Explorer</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Minimal, refined range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4f46e5;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+      transition: transform 0.12s ease, background-color 0.12s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      background: #4338ca;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4f46e5;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+    }
+
+    /* Gentle pulse ring for spotlighted graph points */
+    @keyframes softPulse {
+      0% { transform: scale(1); opacity: 0.75; }
+      75% { transform: scale(2.1); opacity: 0; }
+      100% { transform: scale(2.1); opacity: 0; }
+    }
+    .spotlight-pulse {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: softPulse 1.6s cubic-bezier(0.2, 0, 0.35, 1) infinite;
+    }
+
+    .katex { font-size: 1.02em; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- ================= CLEAN TOP NAVIGATION HEADER ================= -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+      <!-- Left: Minimal App Brand -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+            <path d="M4 5 Q12 25 20 5" />
+          </svg>
+        </div>
+        <h1 id="hdrTitle" class="text-sm sm:text-base font-bold text-slate-900 truncate">
+          Quadratic Functions
+        </h1>
+        <span class="hidden md:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">
+          HKDSE S4
+        </span>
+      </div>
+
+      <!-- Center: 3 Clean Mode Tabs -->
+      <nav class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/70">
+        <button onclick="setMode('explore')" id="nav-explore"
+          class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all">
+          Explore
+        </button>
+        <button onclick="setMode('compare')" id="nav-compare"
+          class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all">
+          Compare &amp; Convert
+        </button>
+        <button onclick="setMode('practice')" id="nav-practice"
+          class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all">
+          Practice
+        </button>
+      </nav>
+
+      <!-- Right: Clean EN | 繁中 Segmented Toggle -->
+      <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold shrink-0">
+        <button onclick="setLang('en')" id="lang-en" class="px-2.5 py-1 rounded-md transition-all">EN</button>
+        <button onclick="setLang('zh')" id="lang-zh" class="px-2.5 py-1 rounded-md transition-all">繁中</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSPACE ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-5">
+
+    <!-- =============================================================== -->
+    <!-- MODE 1: EXPLORE (Left ~58% Graph | Right ~42% Controls & Cards) -->
+    <!-- =============================================================== -->
+    <section id="view-explore" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+      <!-- LEFT (~58% = 7/12 cols): Synchronized Equations + Airy SVG Graph -->
+      <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col gap-3.5 shadow-sm">
+
+        <!-- Synchronized Equation Header Card -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <!-- Vertex Form Pill -->
+            <button onclick="setFormMode('vertex')" id="eqCard-vertex"
+              class="text-left px-3 py-1.5 rounded-xl border transition-all flex items-center gap-2">
+              <span id="eqTag-vertex" class="text-[10px] font-bold uppercase tracking-wider">Vertex</span>
+              <span id="mathHeaderVertex" class="text-sm sm:text-[15px] font-semibold text-slate-900"></span>
+            </button>
+
+            <span class="text-slate-300 font-light hidden sm:inline">=</span>
+
+            <!-- General Form Pill -->
+            <button onclick="setFormMode('general')" id="eqCard-general"
+              class="text-left px-3 py-1.5 rounded-xl border transition-all flex items-center gap-2">
+              <span id="eqTag-general" class="text-[10px] font-bold uppercase tracking-wider">General</span>
+              <span id="mathHeaderGeneral" class="text-sm sm:text-[15px] font-semibold text-slate-900"></span>
+            </button>
+          </div>
+
+          <!-- Clean ±8 / ±16 Grid Zoom Switch -->
+          <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-semibold ml-auto">
+            <button onclick="setZoom(8)" id="zoom-8" class="px-2 py-1 rounded-md transition-all">±8</button>
+            <button onclick="setZoom(16)" id="zoom-16" class="px-2 py-1 rounded-md transition-all">±16</button>
+          </div>
+        </div>
+
+        <!-- Coordinate Plane Container -->
+        <div class="relative w-full max-w-[460px] aspect-square mx-auto select-none">
+          <svg id="exploreSvg" viewBox="0 0 480 480" class="w-full h-full block rounded-xl bg-white"></svg>
+        </div>
+
+        <!-- Calm Single-Line Legend & Reset Spotlight -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <span id="legVertex">Vertex</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+              <span id="legAxis">Axis</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span id="legYInt">y-intercept</span>
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+              <span id="legXInt">x-intercepts</span>
+            </span>
+          </div>
+          <button onclick="setSpotlight(null)" id="btnResetSpotlight"
+            class="hidden text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+            Overview
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT (~42% = 5/12 cols): Progressive Controls + 2x3 Feature Cards -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+
+        <!-- CARD A: Segmented Form Switch + 3 Clean Sliders + 4 Presets -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col gap-4 shadow-sm">
+          <!-- 2-Way Segmented Switch -->
+          <div class="grid grid-cols-2 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+            <button onclick="setFormMode('vertex')" id="seg-vertex"
+              class="py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center">
+              Vertex Form
+            </button>
+            <button onclick="setFormMode('general')" id="seg-general"
+              class="py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center">
+              General Form
+            </button>
+          </div>
+
+          <!-- 3 Progressive Sliders (Updated smoothly in place without DOM thrashing) -->
+          <div class="flex flex-col gap-3">
+            <!-- Slider Row 1 -->
+            <div class="flex items-center gap-3">
+              <div class="w-16 shrink-0 flex items-center justify-between">
+                <span id="s1Name" class="text-sm font-bold text-slate-700 font-mono">a</span>
+                <span id="s1Val" class="text-xs font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">1</span>
+              </div>
+              <button onclick="nudgeSlider(0, -0.5)" class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm flex items-center justify-center shrink-0">−</button>
+              <input id="slider0" type="range" min="-3" max="3" step="0.5" value="1" oninput="handleSlider(0, this.value)" class="w-full" />
+              <button onclick="nudgeSlider(0, 0.5)" class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm flex items-center justify-center shrink-0">+</button>
+            </div>
+
+            <!-- Slider Row 2 -->
+            <div class="flex items-center gap-3">
+              <div class="w-16 shrink-0 flex items-center justify-between">
+                <span id="s2Name" class="text-sm font-bold text-slate-700 font-mono">h</span>
+                <span id="s2Val" class="text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">2</span>
+              </div>
+              <button onclick="nudgeSlider(1, -0.5)" class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm flex items-center justify-center shrink-0">−</button>
+              <input id="slider1" type="range" min="-6" max="6" step="0.5" value="2" oninput="handleSlider(1, this.value)" class="w-full" />
+              <button onclick="nudgeSlider(1, 0.5)" class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm flex items-center justify-center shrink-0">+</button>
+            </div>
+
+            <!-- Slider Row 3 -->
+            <div class="flex items-center gap-3">
+              <div class="w-16 shrink-0 flex items-center justify-between">
+                <span id="s3Name" class="text-sm font-bold text-slate-700 font-mono">k</span>
+                <span id="s3Val" class="text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">-1</span>
+              </div>
+              <button onclick="nudgeSlider(2, -0.5)" class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm flex items-center justify-center shrink-0">−</button>
+              <input id="slider2" type="range" min="-6" max="6" step="0.5" value="-1" oninput="handleSlider(2, this.value)" class="w-full" />
+              <button onclick="nudgeSlider(2, 0.5)" class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-sm flex items-center justify-center shrink-0">+</button>
+            </div>
+          </div>
+
+          <!-- 4 Clean One-Click Preset Pills -->
+          <div class="pt-2 border-t border-slate-100 flex flex-col gap-2">
+            <span id="lblPresets" class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Presets</span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button onclick="loadPreset(0)" id="presetBtn0"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition text-left truncate"></button>
+              <button onclick="loadPreset(1)" id="presetBtn1"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition text-left truncate"></button>
+              <button onclick="loadPreset(2)" id="presetBtn2"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition text-left truncate"></button>
+              <button onclick="loadPreset(3)" id="presetBtn3"
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-medium transition text-left truncate"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD B: 2x3 Feature Cards + Slim 1-Line Inspector Strip -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 flex flex-col gap-3 shadow-sm">
+          <div class="flex items-center justify-between">
+            <h2 id="lblFeaturesHeading" class="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Graph Features
+            </h2>
+            <span id="lblTapSpotlight" class="text-[11px] text-slate-400">
+              Click or hover to spotlight
+            </span>
+          </div>
+
+          <!-- Clean 2x3 Grid -->
+          <div id="featureGrid" class="grid grid-cols-2 gap-2.5"></div>
+
+          <!-- Dedicated Slim 1-Line Formula Inspector Strip -->
+          <div id="inspectorStrip"
+            class="rounded-xl bg-slate-50 border border-slate-200/80 px-3 py-2.5 min-h-[42px] flex items-center gap-2 text-xs text-slate-700">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- MODE 2: COMPARE & CONVERT (Spacious Two-Column Layout)          -->
+    <!-- =============================================================== -->
+    <section id="view-compare" class="hidden grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Column: Clean Scannable Feature Comparison Table -->
+      <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm flex flex-col gap-4">
+        <div>
+          <h2 id="cmpTableHeading" class="text-base font-bold text-slate-900">
+            General Form vs Vertex Form
+          </h2>
+          <p id="cmpTableSub" class="text-xs text-slate-500 mt-0.5">
+            How each graph feature is obtained from the two forms.
+          </p>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-50 text-slate-700 border-b border-slate-200">
+                <th id="cmpThFeat" class="py-2.5 px-3 font-semibold w-[28%]">Feature</th>
+                <th id="cmpThGen" class="py-2.5 px-3 font-semibold w-[36%] border-l border-slate-200"></th>
+                <th id="cmpThVer" class="py-2.5 px-3 font-semibold w-[36%] border-l border-slate-200"></th>
+              </tr>
+            </thead>
+            <tbody id="cmpTableBody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Step-by-Step Algebraic Walkthrough -->
+      <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm flex flex-col gap-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="convHeading" class="text-base font-bold text-slate-900">
+              Algebraic Conversion
+            </h2>
+            <p id="convSub" class="text-xs text-slate-500 mt-0.5">
+              Live walkthrough using your current function from Explore.
+            </p>
+          </div>
+          <button onclick="setMode('explore')" id="btnEditFunc"
+            class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 px-2.5 py-1 rounded-lg bg-indigo-50 transition">
+            Edit Function
+          </button>
+        </div>
+
+        <!-- Segmented Direction Switch -->
+        <div class="grid grid-cols-2 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+          <button onclick="setConvDir('genToVer')" id="convBtn-genToVer"
+            class="py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center"></button>
+          <button onclick="setConvDir('verToGen')" id="convBtn-verToGen"
+            class="py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center"></button>
+        </div>
+
+        <!-- 3-4 Well-Spaced Steps -->
+        <div id="convStepsList" class="flex flex-col gap-3"></div>
+      </div>
+
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- MODE 3: PRACTICE (Single-Question Focus Layout)                 -->
+    <!-- =============================================================== -->
+    <section id="view-practice" class="hidden flex-col gap-4 max-w-5xl mx-auto w-full">
+
+      <!-- Top Filter & Score Strip -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl border border-slate-200 px-4 py-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-1.5" id="quizFilterBar">
+          <button onclick="setQuizTopic('all')" id="qTopic-all" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"></button>
+          <button onclick="setQuizTopic('vertex')" id="qTopic-vertex" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"></button>
+          <button onclick="setQuizTopic('general')" id="qTopic-general" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"></button>
+          <button onclick="setQuizTopic('graph')" id="qTopic-graph" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"></button>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs font-semibold">
+          <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
+            <span id="lblScore">Score</span>: <span id="valScore" class="font-bold text-slate-900">0 / 0</span>
+          </span>
+          <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700">
+            <span id="lblStreak">Streak</span>: <span id="valStreak" class="font-bold">0</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Main Question Focus Card (Left Stimulus | Right MC Options) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+
+        <!-- Left Card: Crisp Function Display OR Mystery Parabola SVG -->
+        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 flex flex-col items-center justify-center shadow-sm min-h-[340px]">
+          <!-- Shown for Algebraic Questions before answer -->
+          <div id="quizEquationStimulus" class="flex flex-col items-center justify-center text-center gap-3 py-8">
+            <span id="quizStimulusTag" class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700"></span>
+            <div id="quizStimulusMath" class="text-xl sm:text-2xl font-bold text-slate-900 py-2"></div>
+          </div>
+
+          <!-- Shown for Graph-Matching Questions (or after answering to verify visually) -->
+          <div id="quizGraphStimulus" class="hidden w-full max-w-[360px] aspect-square">
+            <svg id="practiceSvg" viewBox="0 0 480 480" class="w-full h-full block rounded-xl bg-white"></svg>
+          </div>
+        </div>
+
+        <!-- Right Card: Prompt + 4 Clean MC Options + Immediate Concise Feedback -->
+        <div class="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-sm">
+          <div class="flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-2">
+              <span id="quizCategoryLabel" class="text-xs font-bold uppercase tracking-wider text-indigo-600"></span>
+              <button onclick="nextQuestion()" id="btnSkipQ" class="text-xs font-medium text-slate-400 hover:text-slate-700 transition"></button>
+            </div>
+
+            <div id="quizPrompt" class="text-sm sm:text-base font-semibold text-slate-900 leading-relaxed"></div>
+
+            <!-- 4 Options -->
+            <div id="quizOptions" class="grid grid-cols-1 gap-2.5"></div>
+          </div>
+
+          <!-- Immediate Concise Feedback Bar -->
+          <div id="quizFeedback" class="hidden rounded-xl p-3.5 border flex-col gap-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <span id="quizFeedbackStatus" class="text-xs sm:text-sm font-bold"></span>
+              <button onclick="nextQuestion()" id="btnNextQ"
+                class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition shrink-0">
+              </button>
+            </div>
+            <div id="quizFeedbackText" class="text-xs text-slate-700 leading-relaxed"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= APPLICATION LOGIC ================= -->
+  <script>
+    // =========================================================================
+    // 1. CENTRALIZED STATE & CLEAN LANGUAGE STRINGS
+    // =========================================================================
+    const PRESETS = [
+      { a: 1,  h: 2,  k: -1 }, // 2 Roots (Δ > 0): y = x^2 - 4x + 3 = (x - 2)^2 - 1
+      { a: 1,  h: -1, k: 0  }, // 1 Root  (Δ = 0): y = x^2 + 2x + 1 = (x + 1)^2
+      { a: 1,  h: 1,  k: 2  }, // No Roots (Δ < 0): y = x^2 - 2x + 3 = (x - 1)^2 + 2
+      { a: -1, h: 1,  k: 4  }  // Opens Down (a < 0): y = -x^2 + 2x + 3 = -(x - 1)^2 + 4
+    ];
+
+    const state = {
+      lang: 'en',             // 'en' | 'zh' (strictly single-language display)
+      mode: 'explore',        // 'explore' | 'compare' | 'practice'
+      formMode: 'vertex',     // 'vertex' | 'general'
+      convDir: 'genToVer',    // 'genToVer' | 'verToGen'
+      zoom: 8,                // 8 or 16
+      // Mathematical state (default: Preset 0 -> y = (x - 2)^2 - 1 = x^2 - 4x + 3)
+      a: 1,
+      h: 2,
+      k: -1,
+      b: -4,
+      c: 3,
+      lastNonZeroA: 1,
+      activePreset: 0,
+      // Graph spotlight ('opening' | 'vertex' | 'axis' | 'extrema' | 'yint' | 'xint' | null)
+      spotlight: null,
+      hoverSpotlight: null,
+      // Practice state
+      quizTopic: 'all',       // 'all' | 'vertex' | 'general' | 'graph'
+      score: 0,
+      total: 0,
+      streak: 0,
+      question: null,
+      answered: false,
+      chosenIdx: null
+    };
+
+    const STR = {
+      en: {
+        title: 'Quadratic Function Graphs',
+        navExplore: 'Explore',
+        navCompare: 'Compare & Convert',
+        navPractice: 'Practice',
+        vertexShort: 'Vertex',
+        generalShort: 'General',
+        vertexFormBtn: 'Vertex Form  y = a(x − h)² + k',
+        generalFormBtn: 'General Form  y = ax² + bx + c',
+        legVertex: 'Vertex',
+        legAxis: 'Axis',
+        legYInt: 'y-int.',
+        legXInt: 'x-int.',
+        resetOverview: 'Show Overview',
+        presetsLabel: 'Quick Presets',
+        presets: [
+          '2 Roots (Δ > 0)',
+          '1 Root (Δ = 0)',
+          'No Real Roots (Δ < 0)',
+          'Opens Down (a < 0)'
+        ],
+        featuresHeading: '6 Key Features',
+        tapSpotlight: 'Click a card to spotlight',
+        featOpening: 'Opening',
+        featVertex: 'Vertex',
+        featAxis: 'Axis of Symmetry',
+        featExtrema: 'Max / Min Value',
+        featYInt: 'y-intercept',
+        featXInt: 'x-intercepts',
+        upwards: 'Upwards',
+        downwards: 'Downwards',
+        minLabel: 'Min',
+        maxLabel: 'Max',
+        noneLabel: 'None',
+        touchLabel: '1 (touches)',
+        twoRootsLabel: '2 roots',
+        defaultHint: 'Select any feature card above to spotlight it on the graph and see its formula.',
+        cmpHeading: 'General Form vs Vertex Form',
+        cmpSub: 'Comparison of how each feature is read or calculated.',
+        cmpThFeat: 'Feature',
+        convHeading: 'Step-by-Step Conversion',
+        convSub: 'Live algebraic walkthrough for your current function.',
+        editFunc: 'Adjust in Explore →',
+        genToVerBtn: 'General → Vertex (Completing Square)',
+        verToGenBtn: 'Vertex → General (Expanding)',
+        qTopics: { all: 'All Topics', vertex: 'Vertex Form', general: 'General Form', graph: 'Graph Match' },
+        score: 'Score',
+        streak: 'Streak',
+        skipQ: 'Skip ↻',
+        nextQ: 'Next Question →',
+        correct: 'Correct!',
+        incorrect: 'Review the solution below:',
+        givenFunc: 'Given Quadratic Function'
+      },
+      zh: {
+        title: '二次函數圖像特徵',
+        navExplore: '互動探索',
+        navCompare: '雙式對照',
+        navPractice: '小測挑戰',
+        vertexShort: '頂點式',
+        generalShort: '一般式',
+        vertexFormBtn: '頂點式  y = a(x − h)² + k',
+        generalFormBtn: '一般式  y = ax² + bx + c',
+        legVertex: '頂點',
+        legAxis: '對稱軸',
+        legYInt: 'y 軸截距',
+        legXInt: 'x 軸截距',
+        resetOverview: '返回總覽',
+        presetsLabel: '快速預設例子',
+        presets: [
+          '兩個根 (Δ > 0)',
+          '一個重根 (Δ = 0)',
+          '沒有實根 (Δ < 0)',
+          '開口向下 (a < 0)'
+        ],
+        featuresHeading: '六大圖像特徵',
+        tapSpotlight: '點擊卡片於圖上聚焦顯示',
+        featOpening: '開口方向',
+        featVertex: '頂點坐標',
+        featAxis: '對稱軸',
+        featExtrema: '極大／極小值',
+        featYInt: 'y 軸截距',
+        featXInt: 'x 軸截距',
+        upwards: '向上',
+        downwards: '向下',
+        minLabel: '極小值',
+        maxLabel: '極大值',
+        noneLabel: '沒有實根',
+        touchLabel: '1 個 (相切)',
+        twoRootsLabel: '2 個截距',
+        defaultHint: '點擊上方任何特徵卡片，即可在座標圖聚焦標示並查看對應公式。',
+        cmpHeading: '一般式 vs 頂點式特徵對照',
+        cmpSub: '清晰比較兩種形式下讀取或計算各項特徵的方法。',
+        cmpThFeat: '圖像特徵',
+        convHeading: '代數轉換步驟示範',
+        convSub: '即時將當前探索中的二次函數進行配方法或展開。',
+        editFunc: '返回調整參數 →',
+        genToVerBtn: '一般式 → 頂點式（配方法）',
+        verToGenBtn: '頂點式 → 一般式（展開法）',
+        qTopics: { all: '全部題型', vertex: '頂點式', general: '一般式', graph: '圖像配對' },
+        score: '得分',
+        streak: '連對',
+        skipQ: '換一題 ↻',
+        nextQ: '下一題 →',
+        correct: '答對了！',
+        incorrect: '請參考以下解析：',
+        givenFunc: '已知二次函數'
+      }
+    };
+
+    // =========================================================================
+    // 2. EXACT NUMBER & KATEX FORMATTING HELPERS
+    // =========================================================================
+    function cleanNum(n) {
+      return Math.abs(n) < 1e-9 ? 0 : Math.round(n * 10000) / 10000;
+    }
+
+    function gcd(a, b) {
+      a = Math.abs(Math.round(a));
+      b = Math.abs(Math.round(b));
+      while (b) { const t = b; b = a % b; a = t; }
+      return a || 1;
+    }
+
+    // Format number into clean integer, exact fraction (up to denom 16), or 2-dp decimal
+    function texNum(val, showPlus = false) {
+      val = cleanNum(val);
+      if (val === 0) return showPlus ? '+ 0' : '0';
+      const sign = val < 0 ? '-' : (showPlus ? '+' : '');
+      const abs = Math.abs(val);
+
+      if (Math.abs(abs - Math.round(abs)) < 1e-6) {
+        const i = Math.round(abs);
+        return sign ? `${sign} ${i}`.trim() : `${i}`;
+      }
+
+      const denom = 16;
+      const num = abs * denom;
+      if (Math.abs(num - Math.round(num)) < 1e-5) {
+        const g = gcd(Math.round(num), denom);
+        const p = Math.round(num) / g;
+        const q = denom / g;
+        if (q === 1) return sign ? `${sign} ${p}`.trim() : `${p}`;
+        return sign ? `${sign} \\frac{${p}}{${q}}`.trim() : `\\frac{${p}}{${q}}`;
+      }
+
+      const dec = Number(abs.toFixed(2));
+      return sign ? `${sign} ${dec}`.trim() : `${dec}`;
+    }
+
+    function plainNum(val) {
+      val = cleanNum(val);
+      return Number(val.toFixed(2)).toString();
+    }
+
+    function texLeadA(a) {
+      a = cleanNum(a);
+      if (a === 1) return '';
+      if (a === -1) return '-';
+      return texNum(a, false);
+    }
+
+    // Build clean General Form LaTeX: y = ax^2 + bx + c
+    function texGeneral(a, b, c) {
+      a = cleanNum(a); b = cleanNum(b); c = cleanNum(c);
+      let s = `y = ${texLeadA(a)}x^2`;
+      if (b !== 0) {
+        const absB = Math.abs(b);
+        const signB = b > 0 ? '+' : '-';
+        const bPart = absB === 1 ? '' : texNum(absB, false);
+        s += ` ${signB} ${bPart}x`;
+      }
+      if (c !== 0) {
+        s += ` ${texNum(c, true)}`;
+      }
+      return s;
+    }
+
+    // Build clean Vertex Form LaTeX: y = a(x - h)^2 + k (never (x - -2)^2!)
+    function texVertex(a, h, k) {
+      a = cleanNum(a); h = cleanNum(h); k = cleanNum(k);
+      const aPart = texLeadA(a);
+      let sqPart = '';
+      if (h === 0) {
+        sqPart = 'x^2';
+      } else {
+        const inner = h > 0 ? `- ${texNum(h, false)}` : `+ ${texNum(Math.abs(h), false)}`;
+        sqPart = `(x ${inner})^2`;
+      }
+      const kPart = k !== 0 ? ` ${texNum(k, true)}` : '';
+      return `y = ${aPart}${sqPart}${kPart}`;
+    }
+
+    function katexStr(tex) {
+      try {
+        return katex.renderToString(tex, { throwOnError: false, displayMode: false });
+      } catch (e) {
+        return tex;
+      }
+    }
+
+    function katexRender(tex, elOrId) {
+      const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+      if (!el) return;
+      try {
+        katex.render(tex, el, { throwOnError: false, displayMode: false });
+      } catch (e) {
+        el.textContent = tex;
+      }
+    }
+
+    // Synchronize equations seamlessly
+    function syncFromVertex(a, h, k) {
+      state.a = cleanNum(a);
+      state.h = cleanNum(h);
+      state.k = cleanNum(k);
+      if (state.a !== 0) state.lastNonZeroA = state.a;
+      state.b = cleanNum(-2 * state.a * state.h);
+      state.c = cleanNum(state.a * state.h * state.h + state.k);
+    }
+
+    function syncFromGeneral(a, b, c) {
+      state.a = cleanNum(a);
+      state.b = cleanNum(b);
+      state.c = cleanNum(c);
+      if (state.a !== 0) state.lastNonZeroA = state.a;
+      state.h = cleanNum(-state.b / (2 * state.a));
+      state.k = cleanNum(state.c - (state.b * state.b) / (4 * state.a));
+    }
+
+    function checkPresetMatch() {
+      state.activePreset = PRESETS.findIndex(
+        p => Math.abs(p.a - state.a) < 1e-6 && Math.abs(p.h - state.h) < 1e-6 && Math.abs(p.k - state.k) < 1e-6
+      );
+    }
+
+    // =========================================================================
+    // 3. CLEAN, NON-OVERLAPPING SVG COORDINATE PLANE RENDERER
+    // =========================================================================
+    function buildCalloutPill(x, y, label, colors, preferDir, bounds) {
+      const { pad, W, H } = bounds;
+      // Estimate text width cleanly (handles CJK characters slightly wider)
+      let charUnits = 0;
+      for (const ch of label) {
+        charUnits += ch.charCodeAt(0) > 255 ? 1.75 : 1;
+      }
+      const pillW = Math.max(54, Math.round(charUnits * 6.9 + 18));
+      const pillH = 24;
+
+      let cx = x;
+      let cy = y;
+      if (preferDir === 'below') cy = y + 22;
+      else if (preferDir === 'above') cy = y - 22;
+      else if (preferDir === 'right') cx = x + pillW / 2 + 13;
+      else if (preferDir === 'left') cx = x - pillW / 2 - 13;
+
+      // Clamp strictly inside plot area so pills never clip or hit outer axis letters
+      cx = Math.max(pad + pillW / 2 + 6, Math.min(W - pad - pillW / 2 - 6, cx));
+      cy = Math.max(pad + pillH / 2 + 6, Math.min(H - pad - pillH / 2 - 6, cy));
+
+      return `
+        <g pointer-events="none">
+          <rect x="${(cx - pillW / 2).toFixed(1)}" y="${(cy - pillH / 2).toFixed(1)}"
+            width="${pillW}" height="${pillH}" rx="7"
+            fill="${colors.bg}" stroke="${colors.border}" stroke-width="1.3" />
+          <text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}"
+            text-anchor="middle" font-size="11.5" font-weight="700" fill="${colors.text}">${label}</text>
+        </g>
+      `;
+    }
+
+    function renderParabolaSVG(svgId, params, opts = {}) {
+      const svg = document.getElementById(svgId);
+      if (!svg) return;
+
+      const W = 480, H = 480, pad = 34;
+      const plot = W - pad * 2;
+      const bound = opts.bound || 8;
+      const gridStep = bound === 8 ? 1 : 2;
+      const labelStep = bound === 8 ? 2 : 4;
+      const majorStep = bound === 8 ? 4 : 8;
+
+      const { a, b, c, h, k } = params;
+      const disc = cleanNum(b * b - 4 * a * c);
+      const activeSpot = opts.mystery ? null : (opts.spotlight || null);
+      const isInteractive = Boolean(opts.interactive);
+
+      const sx = (x) => pad + ((x + bound) / (2 * bound)) * plot;
+      const sy = (y) => pad + ((bound - y) / (2 * bound)) * plot;
+
+      const clipId = `clip-${svgId}`;
+      const arrowId = `axArrow-${svgId}`;
+
+      let out = `
+        <defs>
+          <clipPath id="${clipId}">
+            <rect x="${pad}" y="${pad}" width="${plot}" height="${plot}" />
+          </clipPath>
+          <marker id="${arrowId}" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+            <path d="M 0 1.8 L 8.5 5 L 0 8.2 z" fill="#475569" />
+          </marker>
+        </defs>
+        <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff" />
+      `;
+
+      // 1. Calm Grid Lines & Axis Numbers
+      for (let v = -bound; v <= bound; v += gridStep) {
+        if (v === 0) continue;
+        const px = sx(v), py = sy(v);
+        const isMajor = v % majorStep === 0;
+        const stroke = isMajor ? '#e2e8f0' : '#f1f5f9';
+        out += `<line x1="${px}" y1="${pad}" x2="${px}" y2="${H - pad}" stroke="${stroke}" stroke-width="1" />`;
+        out += `<line x1="${pad}" y1="${py}" x2="${W - pad}" y2="${py}" stroke="${stroke}" stroke-width="1" />`;
+
+        if (!opts.mystery && v % labelStep === 0) {
+          out += `<text x="${px}" y="${sy(0) + 15}" text-anchor="middle" font-size="10.5" fill="#94a3b8" font-weight="500">${v}</text>`;
+          out += `<text x="${sx(0) - 7}" y="${py + 3.5}" text-anchor="end" font-size="10.5" fill="#94a3b8" font-weight="500">${v}</text>`;
+        }
+      }
+
+      // 2. Coordinate Axes (ONLY positive ends of x and y have crisp small arrows)
+      const ox = sx(0), oy = sy(0);
+      out += `<line x1="${pad}" y1="${oy}" x2="${W - pad + 8}" y2="${oy}" stroke="#475569" stroke-width="1.5" marker-end="url(#${arrowId})" />`;
+      out += `<line x1="${ox}" y1="${H - pad}" x2="${ox}" y2="${pad - 8}" stroke="#475569" stroke-width="1.5" marker-end="url(#${arrowId})" />`;
+      out += `<text x="${W - pad + 13}" y="${oy + 4}" font-size="12.5" font-style="italic" font-weight="600" fill="#334155">x</text>`;
+      out += `<text x="${ox + 7}" y="${pad - 10}" font-size="12.5" font-style="italic" font-weight="600" fill="#334155">y</text>`;
+      out += `<text x="${ox - 9}" y="${oy + 14}" font-size="11" font-weight="500" fill="#94a3b8">O</text>`;
+
+      // 3. Clipped Plot Elements (NO arrowheads on the parabola!)
+      out += `<g clip-path="url(#${clipId})">`;
+
+      // Subtle dashed Axis of Symmetry (highlighted when 'axis' spotlighted)
+      if (!opts.mystery && Math.abs(h) <= bound) {
+        const axX = sx(h);
+        const isAxisSpot = activeSpot === 'axis';
+        out += `<line x1="${axX}" y1="${pad}" x2="${axX}" y2="${H - pad}"
+          stroke="#f43f5e" stroke-width="${isAxisSpot ? 2.4 : 1.4}"
+          stroke-dasharray="5,5" opacity="${isAxisSpot ? 0.95 : 0.35}" />`;
+      }
+
+      // Horizontal extrema guide line ONLY when 'extrema' is spotlighted
+      if (activeSpot === 'extrema' && Math.abs(k) <= bound) {
+        const vy = sy(k);
+        out += `<line x1="${pad}" y1="${vy}" x2="${W - pad}" y2="${vy}"
+          stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="4,4" opacity="0.85" />`;
+      }
+
+      // Smooth Continuous Parabola Curve (clipped cleanly at plot boundaries, NO markers/arrows)
+      let d = '';
+      let drawing = false;
+      const stepX = bound / 300;
+      for (let x = -bound - 1; x <= bound + 1; x += stepX) {
+        const y = a * (x - h) * (x - h) + k;
+        if (Math.abs(y) <= bound * 3.5) {
+          const px = sx(x).toFixed(2);
+          const py = sy(y).toFixed(2);
+          d += drawing ? ` L ${px} ${py}` : `M ${px} ${py}`;
+          drawing = true;
+        } else {
+          drawing = false;
+        }
+      }
+      if (activeSpot === 'opening') {
+        out += `<path d="${d}" fill="none" stroke="#c7d2fe" stroke-width="8" stroke-linecap="round" />`;
+      }
+      out += `<path d="${d}" fill="none" stroke="#4f46e5" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round" />`;
+
+      // Helper for point opacity so spotlighted feature stands out calmly
+      const ptOpacity = (key) => (!activeSpot || activeSpot === key || (activeSpot === 'extrema' && key === 'vertex')) ? '1' : '0.35';
+
+      // x-intercept dots (Teal)
+      const roots = [];
+      if (disc >= -1e-7) {
+        const safeD = Math.max(0, disc);
+        const r1 = (-b - Math.sqrt(safeD)) / (2 * a);
+        const r2 = (-b + Math.sqrt(safeD)) / (2 * a);
+        if (safeD < 1e-6) roots.push(r1);
+        else roots.push(Math.min(r1, r2), Math.max(r1, r2));
+      }
+
+      if (!opts.mystery) {
+        roots.forEach(r => {
+          if (Math.abs(r) <= bound) {
+            const rx = sx(r), ry = sy(0);
+            if (activeSpot === 'xint') {
+              out += `<circle cx="${rx}" cy="${ry}" r="11" fill="#0d9488" class="spotlight-pulse" />`;
+            }
+            out += `<circle cx="${rx}" cy="${ry}" r="5" fill="#0d9488" stroke="#ffffff" stroke-width="2" opacity="${ptOpacity('xint')}" />`;
+            if (isInteractive) {
+              out += `<circle cx="${rx}" cy="${ry}" r="14" fill="transparent" class="cursor-pointer"
+                onmouseenter="hoverSpot('xint')" onmouseleave="hoverSpot(null)" onclick="toggleSpotlight('xint')" />`;
+            }
+          }
+        });
+      }
+
+      // y-intercept dot (Emerald)
+      if (Math.abs(c) <= bound) {
+        const yx = sx(0), yy = sy(c);
+        if (activeSpot === 'yint') {
+          out += `<circle cx="${yx}" cy="${yy}" r="11" fill="#10b981" class="spotlight-pulse" />`;
+        }
+        out += `<circle cx="${yx}" cy="${yy}" r="5.5" fill="#10b981" stroke="#ffffff" stroke-width="2" opacity="${ptOpacity('yint')}" />`;
+        if (isInteractive) {
+          out += `<circle cx="${yx}" cy="${yy}" r="14" fill="transparent" class="cursor-pointer"
+            onmouseenter="hoverSpot('yint')" onmouseleave="hoverSpot(null)" onclick="toggleSpotlight('yint')" />`;
+        }
+      }
+
+      // Vertex dot (Amber)
+      if (Math.abs(h) <= bound && Math.abs(k) <= bound) {
+        const vx = sx(h), vy = sy(k);
+        if (activeSpot === 'vertex' || activeSpot === 'extrema') {
+          out += `<circle cx="${vx}" cy="${vy}" r="12" fill="#f59e0b" class="spotlight-pulse" />`;
+        }
+        out += `<circle cx="${vx}" cy="${vy}" r="6" fill="#f59e0b" stroke="#ffffff" stroke-width="2.2" opacity="${ptOpacity('vertex')}" />`;
+        if (isInteractive) {
+          out += `<circle cx="${vx}" cy="${vy}" r="15" fill="transparent" class="cursor-pointer"
+            onmouseenter="hoverSpot('vertex')" onmouseleave="hoverSpot(null)" onclick="toggleSpotlight('vertex')" />`;
+        }
+      }
+
+      out += `</g>`; // End clipPath
+
+      // 4. SINGLE NON-OVERLAPPING CALLOUT LAYER (Zero Label Collisions!)
+      if (!opts.mystery) {
+        const bounds = { pad, W, H };
+        const t = STR[state.lang];
+
+        if (!activeSpot) {
+          // Default 'Overview' state: ONLY one subtle non-overlapping Vertex tag
+          if (Math.abs(h) <= bound && Math.abs(k) <= bound) {
+            let vx = sx(h), vy = sy(k);
+            // Nudge horizontally if close to y-axis so it never touches y-axis numbers
+            if (Math.abs(h) > 0 && Math.abs(h) < 1.2) {
+              vx += h > 0 ? 18 : -18;
+            }
+            const dir = a > 0 ? 'below' : 'above';
+            const lbl = `V(${plainNum(h)}, ${plainNum(k)})`;
+            out += buildCalloutPill(vx, vy, lbl, { bg: '#fffbeb', border: '#fcd34d', text: '#b45309' }, dir, bounds);
+          }
+        } else if (activeSpot === 'opening') {
+          const lbl = state.lang === 'en'
+            ? (a > 0 ? `Opens Upwards (a = ${plainNum(a)} > 0)` : `Opens Downwards (a = ${plainNum(a)} < 0)`)
+            : (a > 0 ? `開口向上 (a = ${plainNum(a)} > 0)` : `開口向下 (a = ${plainNum(a)} < 0)`);
+          out += buildCalloutPill(W / 2, pad + 20, lbl, { bg: '#eef2ff', border: '#a5b4fc', text: '#4338ca' }, 'none', bounds);
+        } else if (activeSpot === 'vertex') {
+          if (Math.abs(h) <= bound && Math.abs(k) <= bound) {
+            const lbl = state.lang === 'en'
+              ? `Vertex (${plainNum(h)}, ${plainNum(k)})`
+              : `頂點 (${plainNum(h)}, ${plainNum(k)})`;
+            out += buildCalloutPill(sx(h), sy(k), lbl, { bg: '#fffbeb', border: '#f59e0b', text: '#b45309' }, a > 0 ? 'below' : 'above', bounds);
+          }
+        } else if (activeSpot === 'axis') {
+          const clampedX = Math.max(pad + 45, Math.min(W - pad - 45, sx(h)));
+          const posY = a > 0 ? pad + 22 : H - pad - 22;
+          const lbl = state.lang === 'en' ? `Axis: x = ${plainNum(h)}` : `對稱軸：x = ${plainNum(h)}`;
+          out += buildCalloutPill(clampedX, posY, lbl, { bg: '#fff1f2', border: '#fda4af', text: '#be123c' }, 'none', bounds);
+        } else if (activeSpot === 'extrema') {
+          const clampedY = Math.max(pad + 22, Math.min(H - pad - 22, sy(k)));
+          const lbl = a > 0
+            ? `${t.minLabel} = ${plainNum(k)} (x = ${plainNum(h)})`
+            : `${t.maxLabel} = ${plainNum(k)} (x = ${plainNum(h)})`;
+          out += buildCalloutPill(sx(h), clampedY, lbl, { bg: '#fffbeb', border: '#f59e0b', text: '#b45309' }, a > 0 ? 'below' : 'above', bounds);
+        } else if (activeSpot === 'yint') {
+          if (Math.abs(c) <= bound) {
+            const dir = h >= 0 ? 'left' : 'right';
+            const lbl = state.lang === 'en' ? `y-int: (0, ${plainNum(c)})` : `y 軸截距：(0, ${plainNum(c)})`;
+            out += buildCalloutPill(sx(0), sy(c), lbl, { bg: '#ecfdf5', border: '#6ee7b7', text: '#047857' }, dir, bounds);
+          }
+        } else if (activeSpot === 'xint') {
+          if (roots.length === 0) {
+            const lbl = state.lang === 'en'
+              ? `Δ = ${plainNum(disc)} < 0 (No x-intercepts)`
+              : `Δ = ${plainNum(disc)} < 0（沒有 x 軸截距）`;
+            out += buildCalloutPill(W / 2, pad + 20, lbl, { bg: '#f0fdfa', border: '#5eead4', text: '#0f766e' }, 'none', bounds);
+          } else if (roots.length === 1 && Math.abs(roots[0]) <= bound) {
+            const r = roots[0];
+            out += buildCalloutPill(sx(r), sy(0), `(${plainNum(r)}, 0)`, { bg: '#f0fdfa', border: '#2dd4bf', text: '#0f766e' }, a > 0 ? 'below' : 'above', bounds);
+          } else if (roots.length === 2) {
+            // If roots are far enough apart, label both cleanly; if very close, show one combined pill!
+            const pxDist = Math.abs(sx(roots[1]) - sx(roots[0]));
+            const dir = a > 0 ? 'above' : 'below';
+            if (pxDist > 92) {
+              roots.forEach(r => {
+                if (Math.abs(r) <= bound) {
+                  out += buildCalloutPill(sx(r), sy(0), `(${plainNum(r)}, 0)`, { bg: '#f0fdfa', border: '#2dd4bf', text: '#0f766e' }, dir, bounds);
+                }
+              });
+            } else {
+              const midX = (sx(roots[0]) + sx(roots[1])) / 2;
+              const combined = `x = ${plainNum(roots[0])}, ${plainNum(roots[1])}`;
+              out += buildCalloutPill(midX, sy(0), combined, { bg: '#f0fdfa', border: '#2dd4bf', text: '#0f766e' }, dir, bounds);
+            }
+          }
+        }
+      }
+
+      svg.innerHTML = out;
+    }
+
+    // =========================================================================
+    // 4. EXPLORE MODE: PROGRESSIVE SLIDERS, FEATURE CARDS & INSPECTOR STRIP
+    // =========================================================================
+    function syncSlidersUI() {
+      const s0 = document.getElementById('slider0');
+      const s1 = document.getElementById('slider1');
+      const s2 = document.getElementById('slider2');
+
+      if (state.formMode === 'vertex') {
+        document.getElementById('s1Name').textContent = 'a';
+        document.getElementById('s2Name').textContent = 'h';
+        document.getElementById('s3Name').textContent = 'k';
+
+        s0.min = -3; s0.max = 3; s0.step = 0.5; s0.value = state.a;
+        s1.min = -6; s1.max = 6; s1.step = 0.5; s1.value = state.h;
+        s2.min = -6; s2.max = 6; s2.step = 0.5; s2.value = state.k;
+
+        document.getElementById('s1Val').textContent = plainNum(state.a);
+        document.getElementById('s2Val').textContent = plainNum(state.h);
+        document.getElementById('s3Val').textContent = plainNum(state.k);
+      } else {
+        document.getElementById('s1Name').textContent = 'a';
+        document.getElementById('s2Name').textContent = 'b';
+        document.getElementById('s3Name').textContent = 'c';
+
+        s0.min = -3;  s0.max = 3;  s0.step = 0.5; s0.value = state.a;
+        s1.min = -10; s1.max = 10; s1.step = 0.5; s1.value = state.b;
+        s2.min = -8;  s2.max = 8;  s2.step = 0.5; s2.value = state.c;
+
+        document.getElementById('s1Val').textContent = plainNum(state.a);
+        document.getElementById('s2Val').textContent = plainNum(state.b);
+        document.getElementById('s3Val').textContent = plainNum(state.c);
+      }
+    }
+
+    function handleSlider(index, rawValue) {
+      let val = parseFloat(rawValue);
+      if (index === 0) {
+        // Smoothly skip a = 0 without slider jitter
+        if (Math.abs(val) < 0.25) {
+          val = state.lastNonZeroA > 0 ? 0.5 : -0.5;
+          document.getElementById('slider0').value = val;
+        }
+        if (state.formMode === 'vertex') syncFromVertex(val, state.h, state.k);
+        else syncFromGeneral(val, state.b, state.c);
+      } else if (state.formMode === 'vertex') {
+        if (index === 1) syncFromVertex(state.a, val, state.k);
+        if (index === 2) syncFromVertex(state.a, state.h, val);
+      } else {
+        if (index === 1) syncFromGeneral(state.a, val, state.c);
+        if (index === 2) syncFromGeneral(state.a, state.b, val);
+      }
+      checkPresetMatch();
+      refreshExploreContent(false); // Keep active slider thumb smooth
+    }
+
+    function nudgeSlider(index, delta) {
+      if (index === 0) {
+        let nextA = cleanNum(state.a + delta);
+        if (Math.abs(nextA) < 0.25) nextA = delta > 0 ? 0.5 : -0.5;
+        nextA = Math.max(-3, Math.min(3, nextA));
+        if (state.formMode === 'vertex') syncFromVertex(nextA, state.h, state.k);
+        else syncFromGeneral(nextA, state.b, state.c);
+      } else if (state.formMode === 'vertex') {
+        if (index === 1) syncFromVertex(state.a, Math.max(-6, Math.min(6, cleanNum(state.h + delta))), state.k);
+        if (index === 2) syncFromVertex(state.a, state.h, Math.max(-6, Math.min(6, cleanNum(state.k + delta))));
+      } else {
+        if (index === 1) syncFromGeneral(state.a, Math.max(-10, Math.min(10, cleanNum(state.b + delta))), state.c);
+        if (index === 2) syncFromGeneral(state.a, state.b, Math.max(-8, Math.min(8, cleanNum(state.c + delta))));
+      }
+      checkPresetMatch();
+      refreshExploreContent(true);
+    }
+
+    function loadPreset(idx) {
+      const p = PRESETS[idx];
+      if (!p) return;
+      syncFromVertex(p.a, p.h, p.k);
+      state.activePreset = idx;
+      refreshExploreContent(true);
+    }
+
+    function toggleSpotlight(key) {
+      state.spotlight = state.spotlight === key ? null : key;
+      refreshExploreContent(false);
+    }
+
+    function setSpotlight(key) {
+      state.spotlight = key;
+      refreshExploreContent(false);
+    }
+
+    function hoverSpot(key) {
+      state.hoverSpotlight = key;
+      renderExploreGraphOnly();
+      renderInspectorStrip();
+    }
+
+    function getEffectiveSpotlight() {
+      return state.hoverSpotlight || state.spotlight;
+    }
+
+    function renderExploreGraphOnly() {
+      renderParabolaSVG('exploreSvg', state, {
+        bound: state.zoom,
+        spotlight: getEffectiveSpotlight(),
+        interactive: true,
+        mystery: false
+      });
+      const resetBtn = document.getElementById('btnResetSpotlight');
+      if (resetBtn) {
+        resetBtn.classList.toggle('hidden', state.spotlight === null);
+      }
+    }
+
+    function renderFeatureCards() {
+      const t = STR[state.lang];
+      const { a, b, c, h, k } = state;
+      const disc = cleanNum(b * b - 4 * a * c);
+      const effSpot = getEffectiveSpotlight();
+
+      let xIntSummary = '';
+      if (disc < -1e-7) {
+        xIntSummary = `${t.noneLabel} (${katexStr('\\Delta < 0')})`;
+      } else if (Math.abs(disc) <= 1e-6) {
+        xIntSummary = katexStr(`(${texNum(h)},\\, 0)`);
+      } else {
+        const r1 = (-b - Math.sqrt(disc)) / (2 * a);
+        const r2 = (-b + Math.sqrt(disc)) / (2 * a);
+        const lo = Math.min(r1, r2), hi = Math.max(r1, r2);
+        xIntSummary = katexStr(`x = ${plainNum(lo)},\\; ${plainNum(hi)}`);
+      }
+
+      const items = [
+        {
+          key: 'opening',
+          dot: 'bg-indigo-600',
+          label: t.featOpening,
+          valHtml: `<span class="font-bold text-slate-900">${a > 0 ? t.upwards + ' ↑' : t.downwards + ' ↓'}</span>`
+        },
+        {
+          key: 'vertex',
+          dot: 'bg-amber-500',
+          label: t.featVertex,
+          valHtml: katexStr(`(${texNum(h)},\\; ${texNum(k)})`)
+        },
+        {
+          key: 'axis',
+          dot: 'bg-rose-500',
+          label: t.featAxis,
+          valHtml: katexStr(`x = ${texNum(h)}`)
+        },
+        {
+          key: 'extrema',
+          dot: 'bg-amber-500',
+          label: t.featExtrema,
+          valHtml: `<span class="font-semibold text-slate-600">${a > 0 ? t.minLabel : t.maxLabel}:</span> ${katexStr(texNum(k))}`
+        },
+        {
+          key: 'yint',
+          dot: 'bg-emerald-500',
+          label: t.featYInt,
+          valHtml: katexStr(`(0,\\; ${texNum(c)})`)
+        },
+        {
+          key: 'xint',
+          dot: 'bg-teal-600',
+          label: t.featXInt,
+          valHtml: xIntSummary
+        }
+      ];
+
+      const grid = document.getElementById('featureGrid');
+      grid.innerHTML = items.map(item => {
+        const isSelected = state.spotlight === item.key;
+        const isHovered = effSpot === item.key;
+        const cardCls = isSelected
+          ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/30'
+          : (isHovered ? 'border-slate-300 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-300');
+
+        return `
+          <button type="button"
+            onclick="toggleSpotlight('${item.key}')"
+            onmouseenter="hoverSpot('${item.key}')"
+            onmouseleave="hoverSpot(null)"
+            class="text-left p-2.5 sm:p-3 rounded-xl border transition-all flex flex-col gap-1 ${cardCls}">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full ${item.dot} shrink-0"></span>
+              <span class="text-[11px] font-semibold text-slate-500 truncate">${item.label}</span>
+            </div>
+            <div class="text-xs sm:text-sm font-semibold text-slate-900 truncate">${item.valHtml}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // Concise 1-Line Formula Hint Strip (Adapts to Active Form & Language)
+    function renderInspectorStrip() {
+      const strip = document.getElementById('inspectorStrip');
+      if (!strip) return;
+      const t = STR[state.lang];
+      const spot = getEffectiveSpotlight();
+      const { a, b, c, h, k } = state;
+      const disc = cleanNum(b * b - 4 * a * c);
+      const isVer = state.formMode === 'vertex';
+      const en = state.lang === 'en';
+
+      if (!spot) {
+        strip.innerHTML = `<span class="text-slate-400">${t.defaultHint}</span>`;
+        return;
+      }
+
+      let html = '';
+      if (spot === 'opening') {
+        html = en
+          ? `<span class="font-semibold text-indigo-600">Opening:</span> Read directly from ${katexStr(`a = ${texNum(a)} ${a > 0 ? '> 0' : '< 0'}`)} in both forms.`
+          : `<span class="font-semibold text-indigo-600">開口方向：</span>兩式皆直接由首項係數 ${katexStr(`a = ${texNum(a)} ${a > 0 ? '> 0' : '< 0'}`)} 判斷。`;
+      } else if (spot === 'vertex') {
+        if (isVer) {
+          const signRemind = h < 0
+            ? (en ? ` (Note sign: ${katexStr(`(x + ${texNum(Math.abs(h))})^2 \\Rightarrow h = ${texNum(h)}`)})` : `（留意正負號：${katexStr(`(x + ${texNum(Math.abs(h))})^2 \\Rightarrow h = ${texNum(h)}`)}）`)
+            : '';
+          html = en
+            ? `<span class="font-semibold text-amber-600">Vertex:</span> Read ${katexStr(`(h, k) = (${texNum(h)}, ${texNum(k)})`)} directly.${signRemind}`
+            : `<span class="font-semibold text-amber-600">頂點：</span>由頂點式直讀 ${katexStr(`(h, k) = (${texNum(h)}, ${texNum(k)})`)}${signRemind}。`;
+        } else {
+          html = en
+            ? `<span class="font-semibold text-amber-600">Vertex:</span> Compute ${katexStr(`h = -\\frac{b}{2a} = ${texNum(h)}`)}, then sub ${katexStr(`x = ${texNum(h)} \\Rightarrow k = ${texNum(k)}`)}.`
+            : `<span class="font-semibold text-amber-600">頂點：</span>先算 ${katexStr(`h = -\\frac{b}{2a} = ${texNum(h)}`)}, 再代入求 ${katexStr(`k = ${texNum(k)}`)}。`;
+        }
+      } else if (spot === 'axis') {
+        html = isVer
+          ? (en
+              ? `<span class="font-semibold text-rose-600">Axis:</span> Line equation ${katexStr(`x = h \\Rightarrow x = ${texNum(h)}`)} (must write "${katexStr('x =')}").`
+              : `<span class="font-semibold text-rose-600">對稱軸：</span>直線方程 ${katexStr(`x = h \\Rightarrow x = ${texNum(h)}`)}（必須寫出「${katexStr('x =')}」）。`)
+          : (en
+              ? `<span class="font-semibold text-rose-600">Axis:</span> Formula ${katexStr(`x = -\\frac{b}{2a} = -\\frac{${texNum(b)}}{2(${texNum(a)})} = ${texNum(h)}`)}.`
+              : `<span class="font-semibold text-rose-600">對稱軸：</span>利用公式 ${katexStr(`x = -\\frac{b}{2a} = -\\frac{${texNum(b)}}{2(${texNum(a)})} = ${texNum(h)}`)}。`);
+      } else if (spot === 'extrema') {
+        html = en
+          ? `<span class="font-semibold text-amber-600">${a > 0 ? 'Min' : 'Max'} Value:</span> Equals ${katexStr(`k = ${texNum(k)}`)} when ${katexStr(`x = ${texNum(h)}`)}.`
+          : `<span class="font-semibold text-amber-600">${a > 0 ? '極小值' : '極大值'}：</span>當 ${katexStr(`x = ${texNum(h)}`)} 時取得 ${katexStr(`k = ${texNum(k)}`)}。`;
+      } else if (spot === 'yint') {
+        html = isVer
+          ? (en
+              ? `<span class="font-semibold text-emerald-600">y-int:</span> Sub ${katexStr('x = 0')}: ${katexStr(`c = ah^2 + k = ${texNum(c)}`)} (not ${katexStr('k')}!).`
+              : `<span class="font-semibold text-emerald-600">y 軸截距：</span>代入 ${katexStr('x = 0')} 得 ${katexStr(`c = ah^2 + k = ${texNum(c)}`)}（切勿誤當為 ${katexStr('k')}）。`)
+          : (en
+              ? `<span class="font-semibold text-emerald-600">y-int:</span> Read constant term ${katexStr(`c = ${texNum(c)}`)} directly.`
+              : `<span class="font-semibold text-emerald-600">y 軸截距：</span>由一般式常數項直讀 ${katexStr(`c = ${texNum(c)}`)}。`);
+      } else if (spot === 'xint') {
+        html = en
+          ? `<span class="font-semibold text-teal-700">x-int:</span> ${katexStr(`\\Delta = b^2 - 4ac = ${texNum(disc)}`)} ${disc > 0 ? '(&gt; 0: 2 roots)' : (disc === 0 ? '(= 0: 1 root)' : '(&lt; 0: no real roots)')}.`
+          : `<span class="font-semibold text-teal-700">x 軸截距：</span>判別式 ${katexStr(`\\Delta = b^2 - 4ac = ${texNum(disc)}`)} ${disc > 0 ? '(> 0：2 個截距)' : (disc === 0 ? '(= 0：接觸 x 軸)' : '(< 0：沒有 x 軸截距)')}。`;
+      }
+
+      strip.innerHTML = `<div class="leading-snug">${html}</div>`;
+    }
+
+    function refreshExploreContent(syncSliderInputs = true) {
+      const t = STR[state.lang];
+
+      // Equation Header Cards
+      katexRender(texVertex(state.a, state.h, state.k), 'mathHeaderVertex');
+      katexRender(texGeneral(state.a, state.b, state.c), 'mathHeaderGeneral');
+
+      const vCard = document.getElementById('eqCard-vertex');
+      const gCard = document.getElementById('eqCard-general');
+      const vTag = document.getElementById('eqTag-vertex');
+      const gTag = document.getElementById('eqTag-general');
+      vTag.textContent = t.vertexShort;
+      gTag.textContent = t.generalShort;
+
+      if (state.formMode === 'vertex') {
+        vCard.className = 'text-left px-3 py-1.5 rounded-xl border border-indigo-300 bg-indigo-50/60 transition-all flex items-center gap-2';
+        vTag.className = 'text-[10px] font-bold uppercase tracking-wider text-indigo-700';
+        gCard.className = 'text-left px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-100/70 transition-all flex items-center gap-2';
+        gTag.className = 'text-[10px] font-bold uppercase tracking-wider text-slate-400';
+      } else {
+        gCard.className = 'text-left px-3 py-1.5 rounded-xl border border-indigo-300 bg-indigo-50/60 transition-all flex items-center gap-2';
+        gTag.className = 'text-[10px] font-bold uppercase tracking-wider text-indigo-700';
+        vCard.className = 'text-left px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-100/70 transition-all flex items-center gap-2';
+        vTag.className = 'text-[10px] font-bold uppercase tracking-wider text-slate-400';
+      }
+
+      // Segmented Form Switch
+      document.getElementById('seg-vertex').textContent = t.vertexFormBtn;
+      document.getElementById('seg-general').textContent = t.generalFormBtn;
+      document.getElementById('seg-vertex').className = state.formMode === 'vertex'
+        ? 'py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center bg-white text-indigo-700 shadow-sm'
+        : 'py-1.5 px-2 rounded-lg text-xs font-medium transition-all text-center text-slate-600 hover:text-slate-900';
+      document.getElementById('seg-general').className = state.formMode === 'general'
+        ? 'py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center bg-white text-indigo-700 shadow-sm'
+        : 'py-1.5 px-2 rounded-lg text-xs font-medium transition-all text-center text-slate-600 hover:text-slate-900';
+
+      // Sliders & Readouts
+      if (syncSliderInputs) {
+        syncSlidersUI();
+      } else {
+        // Update numeric pills only
+        document.getElementById('s1Val').textContent = plainNum(state.a);
+        document.getElementById('s2Val').textContent = plainNum(state.formMode === 'vertex' ? state.h : state.b);
+        document.getElementById('s3Val').textContent = plainNum(state.formMode === 'vertex' ? state.k : state.c);
+      }
+
+      // Preset Pills
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById(`presetBtn${i}`);
+        btn.textContent = t.presets[i];
+        btn.className = state.activePreset === i
+          ? 'px-2.5 py-1.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 text-xs font-semibold transition text-left truncate'
+          : 'px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50/70 hover:bg-slate-100 text-slate-600 text-xs font-medium transition text-left truncate';
+      }
+
+      // Zoom Switch
+      document.getElementById('zoom-8').className = state.zoom === 8
+        ? 'px-2 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition-all'
+        : 'px-2 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all';
+      document.getElementById('zoom-16').className = state.zoom === 16
+        ? 'px-2 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition-all'
+        : 'px-2 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all';
+
+      renderExploreGraphOnly();
+      renderFeatureCards();
+      renderInspectorStrip();
+    }
+
+    // =========================================================================
+    // 5. COMPARE & CONVERT MODE
+    // =========================================================================
+    function renderCompareView() {
+      const t = STR[state.lang];
+      const en = state.lang === 'en';
+      const { a, b, c, h, k } = state;
+
+      document.getElementById('cmpTableHeading').textContent = t.cmpHeading;
+      document.getElementById('cmpTableSub').textContent = t.cmpSub;
+      document.getElementById('cmpThFeat').textContent = t.cmpThFeat;
+      document.getElementById('cmpThGen').innerHTML = en
+        ? `General Form<div class="font-normal text-slate-500 mt-0.5">${katexStr('y = ax^2 + bx + c')}</div>`
+        : `一般式<div class="font-normal text-slate-500 mt-0.5">${katexStr('y = ax^2 + bx + c')}</div>`;
+      document.getElementById('cmpThVer').innerHTML = en
+        ? `Vertex Form<div class="font-normal text-slate-500 mt-0.5">${katexStr('y = a(x - h)^2 + k')}</div>`
+        : `頂點式<div class="font-normal text-slate-500 mt-0.5">${katexStr('y = a(x - h)^2 + k')}</div>`;
+
+      const pillDirect = en
+        ? '<span class="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 mr-1">Direct</span>'
+        : '<span class="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 mr-1">直讀</span>';
+
+      const rows = en
+        ? [
+            { f: 'Opening', g: `${pillDirect} ${katexStr('a > 0')} up; ${katexStr('a < 0')} down`, v: `${pillDirect} Same coefficient ${katexStr('a')}` },
+            { f: 'Vertex', g: `Compute ${katexStr('h = -\\frac{b}{2a}')}, then sub ${katexStr('x = h')}`, v: `${pillDirect} ${katexStr('(h, k)')}` },
+            { f: 'Axis of Symmetry', g: `Line ${katexStr('x = -\\frac{b}{2a}')}`, v: `${pillDirect} Line ${katexStr('x = h')}` },
+            { f: 'Max / Min Value', g: `${katexStr('k = c - \\frac{b^2}{4a}')}`, v: `${pillDirect} ${katexStr('k')} (${katexStr('a>0')} Min; ${katexStr('a<0')} Max)` },
+            { f: 'y-intercept', g: `${pillDirect} Constant ${katexStr('c')}`, v: `Sub ${katexStr('x = 0 \\Rightarrow ah^2 + k')}` },
+            { f: 'x-intercepts', g: `Use ${katexStr('\\Delta = b^2 - 4ac')} (&gt;0, =0, &lt;0)`, v: `Solve ${katexStr('a(x - h)^2 + k = 0')}` }
+          ]
+        : [
+            { f: '開口方向', g: `${pillDirect} ${katexStr('a > 0')} 向上；${katexStr('a < 0')} 向下`, v: `${pillDirect} 同樣看首項係數 ${katexStr('a')}` },
+            { f: '頂點坐標', g: `先算 ${katexStr('h = -\\frac{b}{2a}')}，再代入求 ${katexStr('k')}`, v: `${pillDirect} 坐標 ${katexStr('(h, k)')}` },
+            { f: '對稱軸', g: `直線 ${katexStr('x = -\\frac{b}{2a}')}`, v: `${pillDirect} 直線 ${katexStr('x = h')}` },
+            { f: '極大／極小值', g: `${katexStr('k = c - \\frac{b^2}{4a}')}`, v: `${pillDirect} ${katexStr('k')}（${katexStr('a>0')} 極小；${katexStr('a<0')} 極大）` },
+            { f: 'y 軸截距', g: `${pillDirect} 常數項 ${katexStr('c')}`, v: `代入 ${katexStr('x = 0 \\Rightarrow ah^2 + k')}` },
+            { f: 'x 軸截距', g: `判別式 ${katexStr('\\Delta = b^2 - 4ac')}`, v: `解方程 ${katexStr('a(x - h)^2 + k = 0')}` }
+          ];
+
+      document.getElementById('cmpTableBody').innerHTML = rows.map(r => `
+        <tr class="hover:bg-slate-50/70">
+          <td class="py-3 px-3 font-semibold text-slate-800 align-top">${r.f}</td>
+          <td class="py-3 px-3 text-slate-600 border-l border-slate-200 align-top leading-relaxed">${r.g}</td>
+          <td class="py-3 px-3 text-slate-600 border-l border-slate-200 align-top leading-relaxed">${r.v}</td>
+        </tr>
+      `).join('');
+
+      // Right Column: Live Step-by-Step Conversion
+      document.getElementById('convHeading').textContent = t.convHeading;
+      document.getElementById('convSub').textContent = t.convSub;
+      document.getElementById('btnEditFunc').textContent = t.editFunc;
+
+      const btnGV = document.getElementById('convBtn-genToVer');
+      const btnVG = document.getElementById('convBtn-verToGen');
+      btnGV.textContent = t.genToVerBtn;
+      btnVG.textContent = t.verToGenBtn;
+      btnGV.className = state.convDir === 'genToVer'
+        ? 'py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center bg-white text-indigo-700 shadow-sm'
+        : 'py-1.5 px-2 rounded-lg text-xs font-medium transition-all text-center text-slate-600 hover:text-slate-900';
+      btnVG.className = state.convDir === 'verToGen'
+        ? 'py-1.5 px-2 rounded-lg text-xs font-semibold transition-all text-center bg-white text-indigo-700 shadow-sm'
+        : 'py-1.5 px-2 rounded-lg text-xs font-medium transition-all text-center text-slate-600 hover:text-slate-900';
+
+      const genTex = texGeneral(a, b, c);
+      const verTex = texVertex(a, h, k);
+      let steps = [];
+
+      if (state.convDir === 'genToVer') {
+        if (b === 0) {
+          steps = [
+            { title: en ? '1. Start with General Form' : '1. 從一般式出發', math: genTex },
+            { title: en ? '2. Already in Vertex Form (b = 0)' : '2. 由於 b = 0，已屬頂點式', math: `y = ${texLeadA(a)}(x - 0)^2 ${c !== 0 ? texNum(c, true) : '+ 0'}` }
+          ];
+        } else {
+          const p = cleanNum(b / a);
+          const half = cleanNum(b / (2 * a)); // equals -h
+          const sq = cleanNum(half * half);
+          const aLead = texLeadA(a);
+          const pTerm = p > 0
+            ? `+ ${p === 1 ? '' : texNum(p)}x`
+            : `- ${Math.abs(p) === 1 ? '' : texNum(Math.abs(p))}x`;
+          const halfParen = half < 0 ? `\\left(${texNum(half)}\\right)` : `\\left(${texNum(half)}\\right)`;
+
+          steps = [
+            {
+              title: en ? '1. Factor out leading coefficient a from x² and x' : '1. 從 x² 及 x 項抽公因數 a',
+              math: `${genTex} \\implies y = ${aLead}\\left(x^2 ${pTerm}\\right) ${c !== 0 ? texNum(c, true) : ''}`
+            },
+            {
+              title: en ? '2. Complete the square inside brackets' : '2. 括號內加上及減去一次項係數一半的平方',
+              math: `y = ${aLead}\\left[x^2 ${pTerm} + ${halfParen}^2 - ${halfParen}^2\\right] ${c !== 0 ? texNum(c, true) : ''}`
+            },
+            {
+              title: en ? '3. Factor perfect square & combine constants' : '3. 合併完全平方並化簡常數項',
+              math: `y = ${aLead}\\left(x ${texNum(half, true)}\\right)^2 ${texNum(-a * sq, true)} ${c !== 0 ? texNum(c, true) : ''}`
+            },
+            {
+              title: en ? '4. Result in Vertex Form' : '4. 得出頂點式',
+              math: verTex,
+              highlight: true
+            }
+          ];
+        }
+      } else {
+        const neg2h = cleanNum(-2 * h);
+        const hSq = cleanNum(h * h);
+        const aLead = texLeadA(a);
+        const mid = neg2h === 0 ? '' : (neg2h > 0 ? `+ ${neg2h === 1 ? '' : texNum(neg2h)}x` : `- ${Math.abs(neg2h) === 1 ? '' : texNum(Math.abs(neg2h))}x`);
+        const sqExpanded = h === 0 ? 'x^2' : `x^2 ${mid} + ${texNum(hSq)}`;
+
+        steps = [
+          {
+            title: en ? '1. Start with Vertex Form' : '1. 從頂點式出發',
+            math: verTex
+          },
+          {
+            title: en ? '2. Expand the square (x − h)²' : '2. 展開完全平方 (x − h)²',
+            math: `y = ${aLead}\\left(${sqExpanded}\\right) ${k !== 0 ? texNum(k, true) : ''}`
+          },
+          {
+            title: en ? '3. Distribute a and simplify constants' : '3. 乘入係數 a 並合併常數項',
+            math: genTex,
+            highlight: true
+          }
+        ];
+      }
+
+      document.getElementById('convStepsList').innerHTML = steps.map(s => `
+        <div class="rounded-xl p-3.5 border ${s.highlight ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-200/90 bg-slate-50/70'} flex flex-col gap-1.5">
+          <span class="text-[11px] font-semibold ${s.highlight ? 'text-indigo-700' : 'text-slate-500'}">${s.title}</span>
+          <div class="text-sm text-slate-900 overflow-x-auto py-0.5">${katexStr(s.math)}</div>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 6. PRACTICE MODE (HKDSE TRAP-FOCUSED SINGLE-QUESTION ENGINE)
+    // =========================================================================
+    function randItem(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function shuffleOpts(list) {
+      const a = [...list];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function createQuizQuestion(topic) {
+      const pools = {
+        vertex: ['verSign', 'verAxis', 'verYInt'],
+        general: ['genVertex', 'genDisc'],
+        graph: ['graphMatch'],
+        all: ['verSign', 'verAxis', 'verYInt', 'genVertex', 'genDisc', 'graphMatch']
+      };
+      const kind = randItem(pools[topic] || pools.all);
+
+      // 1. Vertex Form Sign Flip Trap: y = a(x + 2)^2 + k -> h = -2
+      if (kind === 'verSign') {
+        const a = randItem([-2, -1, 1, 2]);
+        const h = randItem([-4, -3, -2, 2, 3, 4]);
+        const k = randItem([-4, -2, 1, 3, 5]);
+        const eq = texVertex(a, h, k);
+        return {
+          kind, a, h, k, b: -2 * a * h, c: a * h * h + k,
+          spotAfter: 'vertex',
+          isGraphQ: false,
+          catEn: 'Vertex Form • Vertex & Sign',
+          catZh: '頂點式 • 頂點正負號',
+          eqTex: eq,
+          qEn: `Find the coordinates of the vertex of the graph of ${katexStr(eq)}.`,
+          qZh: `求函數圖像 ${katexStr(eq)} 的頂點坐標。`,
+          options: shuffleOpts([
+            { en: katexStr(`(${h},\\, ${k})`), zh: katexStr(`(${h},\\, ${k})`), ok: true },
+            { en: katexStr(`(${-h},\\, ${k})`), zh: katexStr(`(${-h},\\, ${k})`), ok: false },
+            { en: katexStr(`(${h},\\, ${-k})`), zh: katexStr(`(${h},\\, ${-k})`), ok: false },
+            { en: katexStr(`(${-h},\\, ${-k})`), zh: katexStr(`(${-h},\\, ${-k})`), ok: false }
+          ]),
+          expEn: `Comparing with ${katexStr('y = a(x - h)^2 + k')}, we get ${katexStr(`h = ${h}`)} and ${katexStr(`k = ${k}`)}, so the vertex is ${katexStr(`(${h}, ${k})`)}.`,
+          expZh: `與標準頂點式 ${katexStr('y = a(x - h)^2 + k')} 比較，可得 ${katexStr(`h = ${h}`)} 及 ${katexStr(`k = ${k}`)}，故頂點為 ${katexStr(`(${h}, ${k})`)}。`
+        };
+      }
+
+      // 2. Axis of Symmetry Trap (must be x = h, not just number or y = h)
+      if (kind === 'verAxis') {
+        const a = randItem([-2, -1, 1, 3]);
+        const h = randItem([-5, -3, -2, 2, 4]);
+        const k = randItem([-3, 2, 5]);
+        const eq = texVertex(a, h, k);
+        return {
+          kind, a, h, k, b: -2 * a * h, c: a * h * h + k,
+          spotAfter: 'axis',
+          isGraphQ: false,
+          catEn: 'Vertex Form • Axis of Symmetry',
+          catZh: '頂點式 • 對稱軸方程',
+          eqTex: eq,
+          qEn: `What is the equation of the axis of symmetry of ${katexStr(eq)}?`,
+          qZh: `求二次函數圖像 ${katexStr(eq)} 的對稱軸方程。`,
+          options: shuffleOpts([
+            { en: katexStr(`x = ${h}`), zh: katexStr(`x = ${h}`), ok: true },
+            { en: katexStr(`x = ${-h}`), zh: katexStr(`x = ${-h}`), ok: false },
+            { en: katexStr(`y = ${h}`), zh: katexStr(`y = ${h}`), ok: false },
+            { en: katexStr(`x = ${k}`), zh: katexStr(`x = ${k}`), ok: false }
+          ]),
+          expEn: `The axis of symmetry is a vertical line passing through the vertex: ${katexStr(`x = h \\Rightarrow x = ${h}`)}.`,
+          expZh: `對稱軸是通過頂點的鉛垂線，方程必須寫為 ${katexStr(`x = h \\Rightarrow x = ${h}`)}。`
+        };
+      }
+
+      // 3. y-intercept from Vertex Form Trap (c = ah^2 + k, NOT k)
+      if (kind === 'verYInt') {
+        const a = randItem([-2, -1, 1, 2]);
+        const h = randItem([-3, -2, 2, 3]);
+        const k = randItem([-3, -1, 1, 2]);
+        const c = a * h * h + k;
+        const eq = texVertex(a, h, k);
+        const distractors = Array.from(new Set([k, -k, a * h + k, c + 3])).filter(v => v !== c).slice(0, 3);
+
+        return {
+          kind, a, h, k, b: -2 * a * h, c,
+          spotAfter: 'yint',
+          isGraphQ: false,
+          catEn: 'Vertex Form • y-intercept',
+          catZh: '頂點式 • y 軸截距',
+          eqTex: eq,
+          qEn: `Find the y-intercept of the graph of ${katexStr(eq)}.`,
+          qZh: `求函數圖像 ${katexStr(eq)} 的 y 軸截距。`,
+          options: shuffleOpts([
+            { en: katexStr(`${c}`), zh: katexStr(`${c}`), ok: true },
+            ...distractors.map(d => ({ en: katexStr(`${d}`), zh: katexStr(`${d}`), ok: false }))
+          ]),
+          expEn: `Substitute ${katexStr('x = 0')}: ${katexStr(`y = ${a}(0 - (${h}))^2 ${texNum(k, true)} = ${c}`)} (${katexStr('k')} is the extreme value, not the y-intercept).`,
+          expZh: `代入 ${katexStr('x = 0')}：${katexStr(`y = ${a}(0 - (${h}))^2 ${texNum(k, true)} = ${c}`)}（注意 ${katexStr('k')} 為極值而非 y 軸截距）。`
+        };
+      }
+
+      // 4. General Form -> Vertex Calculation
+      if (kind === 'genVertex') {
+        const a = randItem([-1, 1, 2]);
+        const h = randItem([-3, -2, 1, 2, 3]);
+        const k = randItem([-4, -2, 1, 3]);
+        const b = -2 * a * h;
+        const c = a * h * h + k;
+        const eq = texGeneral(a, b, c);
+        return {
+          kind, a, h, k, b, c,
+          spotAfter: 'vertex',
+          isGraphQ: false,
+          catEn: 'General Form • Vertex & Extrema',
+          catZh: '一般式 • 頂點計算',
+          eqTex: eq,
+          qEn: `Find the vertex of the quadratic graph ${katexStr(eq)}.`,
+          qZh: `求二次函數圖像 ${katexStr(eq)} 的頂點坐標。`,
+          options: shuffleOpts([
+            { en: katexStr(`(${h},\\, ${k})`), zh: katexStr(`(${h},\\, ${k})`), ok: true },
+            { en: katexStr(`(${-h},\\, ${k})`), zh: katexStr(`(${-h},\\, ${k})`), ok: false },
+            { en: katexStr(`(${h},\\, ${c})`), zh: katexStr(`(${h},\\, ${c})`), ok: false },
+            { en: katexStr(`(${b},\\, ${c})`), zh: katexStr(`(${b},\\, ${c})`), ok: false }
+          ]),
+          expEn: `Use ${katexStr(`h = -\\frac{b}{2a} = -\\frac{${b}}{2(${a})} = ${h}`)}. Substituting ${katexStr(`x = ${h}`)} gives ${katexStr(`k = ${k}`)}.`,
+          expZh: `利用 ${katexStr(`h = -\\frac{b}{2a} = -\\frac{${b}}{2(${a})} = ${h}`)}，再代入 ${katexStr(`x = ${h}`)} 求得 ${katexStr(`k = ${k}`)}。`
+        };
+      }
+
+      // 5. General Form -> Discriminant & x-intercepts
+      if (kind === 'genDisc') {
+        const pick = randItem([
+          { a: 1, h: 2, k: -1 },  // Δ = 4 > 0 -> 2
+          { a: 1, h: -2, k: 0 },  // Δ = 0 -> 1
+          { a: 1, h: 1, k: 3 },   // Δ = -12 < 0 -> 0
+          { a: -1, h: 1, k: -2 }  // Δ = -8 < 0 -> 0
+        ]);
+        const { a, h, k } = pick;
+        const b = -2 * a * h;
+        const c = a * h * h + k;
+        const disc = b * b - 4 * a * c;
+        const cnt = disc > 0 ? 2 : (disc === 0 ? 1 : 0);
+        const eq = texGeneral(a, b, c);
+
+        return {
+          kind, a, h, k, b, c,
+          spotAfter: 'xint',
+          isGraphQ: false,
+          catEn: 'General Form • Discriminant Δ',
+          catZh: '一般式 • 判別式 Δ',
+          eqTex: eq,
+          qEn: `Find the discriminant ${katexStr('\\Delta')} and number of x-intercepts of ${katexStr(eq)}.`,
+          qZh: `求圖像 ${katexStr(eq)} 的判別式 ${katexStr('\\Delta')} 及 x 軸截距數目。`,
+          options: shuffleOpts([
+            { en: `${katexStr(`\\Delta = ${disc}`)}, ${cnt} x-intercept${cnt === 1 ? '' : 's'}`, zh: `${katexStr(`\\Delta = ${disc}`)}，${cnt} 個 x 軸截距`, ok: true },
+            { en: `${katexStr(`\\Delta = ${b * b + 4 * a * c}`)}, 2 x-intercepts`, zh: `${katexStr(`\\Delta = ${b * b + 4 * a * c}`)}，2 個 x 軸截距`, ok: false },
+            { en: `${katexStr(`\\Delta = ${disc}`)}, ${cnt === 0 ? 2 : 0} x-intercepts`, zh: `${katexStr(`\\Delta = ${disc}`)}，${cnt === 0 ? 2 : 0} 個 x 軸截距`, ok: false },
+            { en: `${katexStr(`\\Delta = ${-disc || 8}`)}, 1 x-intercept`, zh: `${katexStr(`\\Delta = ${-disc || 8}`)}，1 個 x 軸截距`, ok: false }
+          ]),
+          expEn: `${katexStr(`\\Delta = b^2 - 4ac = (${b})^2 - 4(${a})(${c}) = ${disc}`)}, giving ${cnt} real x-intercept${cnt === 1 ? '' : 's'}.`,
+          expZh: `${katexStr(`\\Delta = b^2 - 4ac = (${b})^2 - 4(${a})(${c}) = ${disc}`)}，因此圖像有 ${cnt} 個 x 軸截距。`
+        };
+      }
+
+      // 6. HKDSE Graph Matching (Mystery Parabola)
+      const a = randItem([-1, 1]);
+      const h = randItem([-3, 3]);
+      const k = a > 0 ? -2 : 2;
+      const b = -2 * a * h;
+      const c = a * h * h + k;
+      const rightEq = texVertex(a, h, k);
+
+      return {
+        kind: 'graphMatch', a, h, k, b, c,
+        spotAfter: 'vertex',
+        isGraphQ: true,
+        catEn: 'HKDSE Graph Match',
+        catZh: 'HKDSE 圖像配對',
+        eqTex: rightEq,
+        qEn: 'Which quadratic function best represents the parabola shown on the left?',
+        qZh: '下列哪一個二次函數最能代表左圖所示的拋物線？',
+        options: shuffleOpts([
+          { en: katexStr(rightEq), zh: katexStr(rightEq), ok: true },
+          { en: katexStr(texVertex(a, -h, k)), zh: katexStr(texVertex(a, -h, k)), ok: false },
+          { en: katexStr(texVertex(-a, h, k)), zh: katexStr(texVertex(-a, h, k)), ok: false },
+          { en: katexStr(texVertex(a, h, -k)), zh: katexStr(texVertex(a, h, -k)), ok: false }
+        ]),
+        expEn: `The parabola opens ${a > 0 ? 'upwards' : 'downwards'} (${katexStr(`a ${a > 0 ? '> 0' : '< 0'}`)}) with vertex in quadrant (${h > 0 ? '+' : '−'}, ${k > 0 ? '+' : '−'}), matching ${katexStr(rightEq)}.`,
+        expZh: `拋物線開口${a > 0 ? '向上' : '向下'}（${katexStr(`a ${a > 0 ? '> 0' : '< 0'}`)}），且頂點位於 (${h > 0 ? '+' : '−'}, ${k > 0 ? '+' : '−'}) 象限，對應 ${katexStr(rightEq)}。`
+      };
+    }
+
+    function setQuizTopic(topic) {
+      state.quizTopic = topic;
+      nextQuestion();
+    }
+
+    function nextQuestion() {
+      state.question = createQuizQuestion(state.quizTopic);
+      state.answered = false;
+      state.chosenIdx = null;
+      renderPracticeView();
+    }
+
+    function chooseOption(idx) {
+      if (state.answered || !state.question) return;
+      state.answered = true;
+      state.chosenIdx = idx;
+      state.total += 1;
+      if (state.question.options[idx].ok) {
+        state.score += 1;
+        state.streak += 1;
+      } else {
+        state.streak = 0;
+      }
+      renderPracticeView();
+    }
+
+    function renderPracticeView() {
+      if (!state.question) {
+        state.question = createQuizQuestion(state.quizTopic);
+      }
+      const t = STR[state.lang];
+      const en = state.lang === 'en';
+      const q = state.question;
+
+      // Topic Filter Bar
+      ['all', 'vertex', 'general', 'graph'].forEach(tp => {
+        const btn = document.getElementById(`qTopic-${tp}`);
+        btn.textContent = t.qTopics[tp];
+        btn.className = state.quizTopic === tp
+          ? 'px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white shadow-sm'
+          : 'px-3 py-1.5 rounded-lg text-xs font-medium transition text-slate-600 hover:bg-slate-100';
+      });
+
+      document.getElementById('lblScore').textContent = t.score;
+      document.getElementById('lblStreak').textContent = t.streak;
+      document.getElementById('valScore').textContent = `${state.score} / ${state.total}`;
+      document.getElementById('valStreak').textContent = `${state.streak}`;
+
+      // Left Stimulus Card: Show equation before answering (unless Graph Match); once answered, show annotated SVG!
+      const eqBox = document.getElementById('quizEquationStimulus');
+      const svgBox = document.getElementById('quizGraphStimulus');
+
+      if (q.isGraphQ || state.answered) {
+        eqBox.classList.add('hidden');
+        svgBox.classList.remove('hidden');
+        renderParabolaSVG('practiceSvg', q, {
+          bound: 8,
+          spotlight: state.answered ? q.spotAfter : null,
+          interactive: false,
+          mystery: q.isGraphQ && !state.answered
+        });
+      } else {
+        svgBox.classList.add('hidden');
+        eqBox.classList.remove('hidden');
+        document.getElementById('quizStimulusTag').textContent = t.givenFunc;
+        katexRender(q.eqTex, 'quizStimulusMath');
+      }
+
+      // Right Options Card
+      document.getElementById('quizCategoryLabel').textContent = en ? q.catEn : q.catZh;
+      document.getElementById('btnSkipQ').textContent = t.skipQ;
+      document.getElementById('quizPrompt').innerHTML = en ? q.qEn : q.qZh;
+
+      const letters = ['A', 'B', 'C', 'D'];
+      document.getElementById('quizOptions').innerHTML = q.options.map((opt, idx) => {
+        let style = 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50/70 text-slate-800';
+        let badge = 'bg-slate-100 text-slate-600';
+
+        if (state.answered) {
+          if (opt.ok) {
+            style = 'border-emerald-500 bg-emerald-50/70 text-emerald-950';
+            badge = 'bg-emerald-600 text-white';
+          } else if (state.chosenIdx === idx) {
+            style = 'border-rose-400 bg-rose-50/70 text-rose-950';
+            badge = 'bg-rose-600 text-white';
+          } else {
+            style = 'border-slate-200 bg-slate-50/50 text-slate-400 opacity-65';
+          }
+        }
+
+        return `
+          <button type="button" onclick="chooseOption(${idx})" ${state.answered ? 'disabled' : ''}
+            class="px-3.5 py-3 rounded-xl border text-left transition flex items-center gap-3 ${style}">
+            <span class="w-6 h-6 rounded-md text-xs font-bold flex items-center justify-center shrink-0 ${badge}">${letters[idx]}</span>
+            <span class="text-xs sm:text-sm font-medium">${en ? opt.en : opt.zh}</span>
+          </button>
+        `;
+      }).join('');
+
+      const fb = document.getElementById('quizFeedback');
+      if (state.answered) {
+        const isRight = q.options[state.chosenIdx]?.ok;
+        fb.className = isRight
+          ? 'flex rounded-xl p-3.5 border border-emerald-200 bg-emerald-50/70 flex-col gap-1.5'
+          : 'flex rounded-xl p-3.5 border border-amber-200 bg-amber-50/80 flex-col gap-1.5';
+        const statusEl = document.getElementById('quizFeedbackStatus');
+        statusEl.textContent = isRight ? `✓ ${t.correct}` : t.incorrect;
+        statusEl.className = isRight ? 'text-xs sm:text-sm font-bold text-emerald-800' : 'text-xs sm:text-sm font-bold text-amber-900';
+        document.getElementById('btnNextQ').textContent = t.nextQ;
+        document.getElementById('quizFeedbackText').innerHTML = en ? q.expEn : q.expZh;
+      } else {
+        fb.className = 'hidden';
+      }
+    }
+
+    // =========================================================================
+    // 7. TOP-LEVEL VIEW & LANGUAGE CONTROLLERS
+    // =========================================================================
+    function setLang(lang) {
+      state.lang = lang;
+      renderApp();
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      renderApp();
+    }
+
+    function setFormMode(fm) {
+      state.formMode = fm;
+      refreshExploreContent(true);
+    }
+
+    function setZoom(z) {
+      state.zoom = z;
+      refreshExploreContent(false);
+    }
+
+    function setConvDir(dir) {
+      state.convDir = dir;
+      renderCompareView();
+    }
+
+    function renderApp() {
+      const t = STR[state.lang];
+
+      // Header & Language Switch
+      document.getElementById('hdrTitle').textContent = t.title;
+      document.getElementById('nav-explore').textContent = t.navExplore;
+      document.getElementById('nav-compare').textContent = t.navCompare;
+      document.getElementById('nav-practice').textContent = t.navPractice;
+
+      document.getElementById('lang-en').className = state.lang === 'en'
+        ? 'px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition-all'
+        : 'px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all';
+      document.getElementById('lang-zh').className = state.lang === 'zh'
+        ? 'px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition-all'
+        : 'px-2.5 py-1 rounded-md text-slate-500 hover:text-slate-800 transition-all';
+
+      // Mode Navigation Tabs & Section Visibility
+      const modes = ['explore', 'compare', 'practice'];
+      modes.forEach(m => {
+        const navBtn = document.getElementById(`nav-${m}`);
+        const view = document.getElementById(`view-${m}`);
+        const active = state.mode === m;
+
+        navBtn.className = active
+          ? 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-white text-indigo-700 shadow-sm transition-all'
+          : 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 transition-all';
+
+        if (active) {
+          view.classList.remove('hidden');
+          view.classList.add(m === 'practice' ? 'flex' : 'grid');
+        } else {
+          view.classList.add('hidden');
+          view.classList.remove('flex', 'grid');
+        }
+      });
+
+      // Explore static labels
+      document.getElementById('legVertex').textContent = t.legVertex;
+      document.getElementById('legAxis').textContent = t.legAxis;
+      document.getElementById('legYInt').textContent = t.legYInt;
+      document.getElementById('legXInt').textContent = t.legXInt;
+      document.getElementById('btnResetSpotlight').textContent = t.resetOverview;
+      document.getElementById('lblPresets').textContent = t.presetsLabel;
+      document.getElementById('lblFeaturesHeading').textContent = t.featuresHeading;
+      document.getElementById('lblTapSpotlight').textContent = t.tapSpotlight;
+
+      if (state.mode === 'explore') refreshExploreContent(true);
+      else if (state.mode === 'compare') renderCompareView();
+      else if (state.mode === 'practice') renderPracticeView();
+    }
+
+    window.onload = function () {
+      syncFromVertex(1, 2, -1); // Preset 0: y = (x - 2)^2 - 1 = x^2 - 4x + 3
+      renderApp();
+    };
+  </script>
+</body>
+</html>
